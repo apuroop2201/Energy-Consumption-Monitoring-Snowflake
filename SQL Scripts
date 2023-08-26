@@ -1,0 +1,52 @@
+-- Create a database and schema
+CREATE OR REPLACE DATABASE EnergyConsumptionDB;
+USE DATABASE EnergyConsumptionDB;
+
+CREATE OR REPLACE SCHEMA PUBLIC;
+
+-- Create a table to store energy consumption data
+CREATE OR REPLACE TABLE ENERGYCONSUMPTIONDB.PUBLIC.energy_consumption (
+    timestamp TIMESTAMP,
+    meter_id INT,
+    energy_consumption FLOAT
+);
+
+-- Create a file format for CSV
+CREATE OR REPLACE FILE FORMAT your_csv_format
+    TYPE = CSV
+    FIELD_OPTIONALLY_ENCLOSED_BY = '"'
+    SKIP_HEADER = 1;
+
+-- Create a stage for data loading
+CREATE OR REPLACE STAGE my_internal_stage;
+
+-- Load data into the stage
+PUT file:///C:/Users/sriap/OneDrive/Desktop/Energy-Consumption-Monitoring-Snowflake/energy_consumption_data.csv @my_internal_stage;
+
+-- Copy data from stage to the table
+COPY INTO ENERGYCONSUMPTIONDB.PUBLIC.energy_consumption
+FROM @MY_INTERNAL_STAGE/energy_consumption_data.csv
+FILE_FORMAT = (FORMAT_NAME = YOUR_CSV_FORMAT)
+ON_ERROR = 'CONTINUE'; -- You can adjust error handling as needed
+
+-- Query to calculate total energy consumption per day
+SELECT DATE_TRUNC('DAY', timestamp) AS day,
+       SUM(energy_consumption) AS total_energy_consumption
+FROM ENERGYCONSUMPTIONDB.PUBLIC.energy_consumption
+GROUP BY day
+ORDER BY day;
+
+-- Add more analysis queries here as needed
+
+-- Query to find average energy consumption per meter
+SELECT meter_id,
+       AVG(energy_consumption) AS avg_energy_consumption
+FROM ENERGYCONSUMPTIONDB.PUBLIC.energy_consumption
+GROUP BY meter_id;
+
+-- Query to find energy consumption on specific days
+SELECT timestamp, energy_consumption
+FROM ENERGYCONSUMPTIONDB.PUBLIC.energy_consumption
+WHERE DATE_TRUNC('DAY', timestamp) = '2023-08-03';
+
+-- Create additional analysis queries and visualizations as needed
